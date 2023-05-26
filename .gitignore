@@ -1,0 +1,6 @@
+.idea
+
+cdk/target
+cdk/cdk.out
+
+file-processing-lambda/target
