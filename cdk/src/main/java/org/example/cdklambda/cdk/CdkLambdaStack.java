@@ -1,35 +1,22 @@
 package org.example.cdklambda.cdk;
 
-import software.amazon.awscdk.App;
-import software.amazon.awscdk.Duration;
+import org.example.cdklambda.constructs.LambdaConstruct;
+import org.example.cdklambda.constructs.RdsPostgresConstruct;
+import org.example.cdklambda.constructs.S3Construct;
+import org.example.cdklambda.constructs.VpcConstruct;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.lambda.Code;
-import software.amazon.awscdk.services.lambda.Function;
-import software.amazon.awscdk.services.lambda.Runtime;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 public class CdkLambdaStack extends Stack {
 
-    private static final String targetBucket = "s3-notifications-lambda-bucket";
+    public CdkLambdaStack(final Construct parent, final String id, final StackProps stackProps) {
+        super(parent, id, stackProps);
 
-    public CdkLambdaStack(final App parent, final String id) {
-        this(parent, id, null);
-    }
-
-    public CdkLambdaStack(final Construct parent, final String id, final StackProps props) {
-        super(parent, id, props);
-
-        Bucket bucket = Bucket.Builder.create(this,targetBucket).build();
-
-        Function fileProcessingLambda = Function.Builder.create(this, "fileProcessingLambda")
-                .runtime(Runtime.JAVA_11)
-                .functionName("fileProcessingLambda")
-                .timeout(Duration.seconds(30))
-                .memorySize(1024)
-                .code(Code.fromAsset("../file-processing-lambda/target/file-processing-lambda.jar"))
-                .handler("org.example.cdklambda.cdk.FileProcessingLambda::handleRequest")
-                .build();
+        VpcConstruct vpcConstruct = new VpcConstruct(this, this.getStackName() + ".VpcConstruct");
+        RdsPostgresConstruct rdsPostgresConstruct =
+                new RdsPostgresConstruct(this, this.getStackName() + ".RdsPostgresConstruct", vpcConstruct.getVpc());
+        S3Construct s3Construct = new S3Construct(this, this.getStackName() + ".S3Construct");
+        new LambdaConstruct(this, this.getStackName() + ".LambdaConstruct", s3Construct.getBucket(), vpcConstruct.getVpc());
     }
 }
